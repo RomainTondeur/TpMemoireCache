@@ -1,3 +1,6 @@
+print("------------------------")
+print("SIMULATION MEMOIRE CACHE")
+print("------------------------")
 
 # Auteurs: LAMPE Ronan / TONDEUR Romain
 # Description: Script Python de Simulation d'une Mémoire Cache
@@ -11,6 +14,7 @@ import os
 
 
 # Arguments donnés à l'appel du script
+print("\nLecture des paramètres...")
 args = sys.argv[1:]
 
 
@@ -23,11 +27,19 @@ trace_mem = ""
 
 # Vérification de la récupération des paramètres (& affectation)
 if len(args) == 4:
-    cs = args[0]
-    bs = args[1]
-    assoc = args[2]
+
+    cs = int(args[0])
+    print("Taille de la cache.. " + str(cs) + " octets")
+
+    bs = int(args[1])
+    print("Taille d'un bloc.. " + str(bs) + " octets")
+
+    assoc = int(args[2])
+    print("Degré d'associativité.. " + str(assoc))
+
     if os.path.exists(args[3]):
         trace_mem = args[3]
+        print("Trace mémoire.. " + trace_mem + " (trouvé)")
     else:
         print("Erreur: Trace mémoire introuvable")
         exit(1)
@@ -36,20 +48,22 @@ else:
     exit(1)
 
 
-# Affichage des paramètres
-print("\n--------------- PARAMETRES ---------------")
-print("Taille de la cache: " + str(cs) + " octets")
-print("Taille d'un bloc: " + str(bs) + " octets")
-print("Degré d'associativité: " + str(assoc))
-print("Trace mémoire: " + trace_mem)
+# Affichage du type de cache
+print("\nRecherche du type de cache...")
+if assoc == 1:
+    print("Cache à accès direct (DMC)")
+elif assoc == (cs % bs):
+    print("Cache totalement associatif")
+else:
+    print("Cache de type inconnu")
 
 
 # Ouverture & Lecture de la trace
+print("\nOuverture de la trace mémoire...")
 trace = open(trace_mem, "r")
+print("Lecture et enregistrement de la trace mémoire..")
 instructions = trace.readlines()
-
-print("\n--------------- LECTURE TRACE ---------------")
-print("Info: La trace mémoire a bien été lue")
+print("La trace mémoire a bien été lue")
 
 
 # Fermeture de la trace
