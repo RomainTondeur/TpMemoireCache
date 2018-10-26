@@ -19,44 +19,60 @@ args = sys.argv[1:]
 
 
 # Déclaration des variables
-cs = 0
-bs = 0
-assoc = 0
+cs = 4096
+bs = 64
+assoc = 4
 trace_mem = ""
+nbe = cs/(bs*assoc)
+# nb = adr / bs
+# Index = nb % nbe
+# Etiquette = nb / nbe
+
+
+# Affichage du type du cache
+def type_cache():
+    print("\nRecherche du type de cache en cours...")
+    # Test
+    # print(bs)
+    # print(cs % bs)
+    # print(assoc)
+    if assoc == 1:
+        print("Cache à accès direct (DMC)")
+    elif assoc == (cs % bs):
+        print("Cache 100% associatif")
+    else:
+        print("Cache de type Inconnu ou erreur de paramétrage")
 
 
 # Vérification de la récupération des paramètres (& affectation)
-if len(args) == 4:
+def verif_parametrage():
+    if len(args) == 4:
+        cs = int(args[0])
+        print("Taille de la cache.. " + str(cs) + " octets")
 
-    cs = int(args[0])
-    print("Taille de la cache.. " + str(cs) + " octets")
+        bs = int(args[1])
+        print("Taille d'un bloc.. " + str(bs) + " octets")
 
-    bs = int(args[1])
-    print("Taille d'un bloc.. " + str(bs) + " octets")
+        assoc = int(args[2])
+        print("Degré d'associativité.. " + str(assoc))
 
-    assoc = int(args[2])
-    print("Degré d'associativité.. " + str(assoc))
-
-    if os.path.exists(args[3]):
-        trace_mem = args[3]
-        print("Trace mémoire.. " + trace_mem + " (trouvé)")
+        if os.path.exists(args[3]):
+            trace_mem = args[3]
+            print("Trace mémoire.. " + trace_mem + " (trouvé)")
+        else:
+            print("Erreur: Trace mémoire introuvable")
+            exit(1)
     else:
-        print("Erreur: Trace mémoire introuvable")
+        print("Erreur: " + str(4 - len(args)) + " Paramètres manquants")
         exit(1)
-else:
-    print("Erreur: " + str(4 - len(args)) + " Paramètres manquants")
-    exit(1)
 
 
-# Affichage du type de cache
-print("\nRecherche du type de cache...")
-if assoc == 1:
-    print("Cache à accès direct (DMC)")
-elif assoc == (cs % bs):
-    print("Cache totalement associatif")
-else:
-    print("Cache de type inconnu")
+# Main du script
+# test
+print(args)
 
+type_cache()
+verif_parametrage()
 
 # Ouverture & Lecture de la trace
 print("\nOuverture de la trace mémoire...")
@@ -68,3 +84,5 @@ print("La trace mémoire a bien été lue")
 
 # Fermeture de la trace
 trace.close()
+
+
