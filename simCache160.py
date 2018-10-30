@@ -32,24 +32,22 @@ def_ecr = 0
 # ----------------------------------------------------------------------
 
 # Classe d'un bloc mémoire
-class Bloc:
+class Bloc(object):
     # Procédure d'initialisation
     def __init__(self):
         #
-        self.valide = bool
+        self.valide = False
 
         # Etiquette
-        self.tag = int
+        self.tag = int(0)
+
+    # Affichage de la classe
+    def __repr__(self):
+        return "Bloc({}|{})".format(self.valide, self.tag)
 
 
 # Classe de la mémoire cache
 class Memoire:
-    # ----------------------------------------------------------------------
-    # ------------------------- VARIABLES MEMOIRE --------------------------
-    # ----------------------------------------------------------------------
-
-    # Cache (A INITIALISER)
-    cache = list
 
     # ----------------------------------------------------------------------
     # --------------------------- PROCEDURES -------------------------------
@@ -71,6 +69,12 @@ class Memoire:
 
         # Nombre d'ensembles
         self.nbe = int(self.cs / (self.bs * self.assoc))
+
+        # Initialisation de la cache mémoire avec "nbe" lignes
+        self.cache = [[] for _ in range(self.nbe)]
+        for index in range(len(self.cache)):
+            # Pour chaque ligne, on initialise "assoc" "Bloc" et on les lient à la cache
+            self.cache[index].extend(Bloc() for _ in range(self.assoc))
 
     # Affichage des paramètres récupérés
     def affiche_params(self):
@@ -109,19 +113,19 @@ class Memoire:
                 assoc = 0
                 trouve = False
                 while assoc < self.assoc and not trouve:
-                    if not cache[index][assoc].valide or cache[index][assoc].tag != tag:
+                    if not self.cache[index][assoc].valide or self.cache[index][assoc].tag != tag:
                         assoc += 1
         print("La trace mémoire a bien été lue")
 
-    # Random
+    # TO-DO: Random
     def rand(self):
         pass
 
-    # First in, First out (FiFo)
+    # TO-DO: First in, First out (FiFo)
     def fifo(self):
         pass
 
-    # Least Recently Used (LRU)
+    # TO-DO: Least Recently Used (LRU)
     def lro(self):
         pass
 
@@ -186,5 +190,5 @@ MemCache.affiche_params()
 # Recherche du type de mémoire cache
 MemCache.type_cache()
 
-# Lecture de la trace mémoire
+# Lecture de la trace mémoire (EN CONSTRUCTION)
 # MemCache.lecture_trace()
