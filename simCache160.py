@@ -11,6 +11,7 @@
 # Importation des modules
 import sys
 import os
+import random
 
 
 # ----------------------------------------------------------------------
@@ -56,13 +57,13 @@ class Memoire:
     # Procédure d'initialisation
     def __init__(self, params):
         # Cache size (taille totale de la cache, octet)
-        self.cs = params[0]
+        self.cs = int(params[0])
 
         # Block size (taille d'un bloc, octet)
-        self.bs = params[1]
+        self.bs = int(params[1])
 
         # Degré d'associativité du cache
-        self.assoc = params[2]
+        self.assoc = int(params[2])
 
         # Chemin du fichier de trace mémoire (nom de la trace si même dossier source)
         self.trace_mem = params[3]
@@ -73,7 +74,7 @@ class Memoire:
         # Initialisation de la cache mémoire avec "nbe" lignes
         self.cache = [[] for _ in range(self.nbe)]
         for index in range(len(self.cache)):
-            # Pour chaque ligne, on initialise "assoc" "Bloc" et on les lient à la cache
+            # Pour chaque ligne, on initialise "assoc" "Bloc" et on les lie à la cache
             self.cache[index].extend(Bloc() for _ in range(self.assoc))
 
     # Affichage des paramètres récupérés
@@ -119,10 +120,15 @@ class Memoire:
 
     # TO-DO: Random
     def rand(self):
+        # Génération d'un nombre entier aléatoire entre 1 et cs
+        i = int(random.randint(2, self.cs+1))
+        i = i-1
+
         pass
 
     # TO-DO: First in, First out (FiFo)
     def fifo(self):
+
         pass
 
     # TO-DO: Least Recently Used (LRU)
@@ -184,6 +190,12 @@ print("| SIMULATION MEMOIRE CACHE |")
 print(" -------------------------- ")
 
 # On crée notre instance de mémoire cache
+params = [1024, 32, 4, "multTrace.txt"]
+MemCache = Memoire(params)
+
+# test d'initialisation de la variable
+print(MemCache.nbe)
+print(MemCache.cs)
 MemCache = Memoire(verif_parametrage())
 MemCache.affiche_params()
 
