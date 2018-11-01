@@ -55,18 +55,18 @@ class Memoire:
     # ----------------------------------------------------------------------
 
     # Procédure d'initialisation
-    def __init__(self, params):
+    def __init__(self, lst_params_cast):
         # Cache size (taille totale de la cache, octet)
-        self.cs = int(params[0])
+        self.cs = lst_params_cast[0]
 
         # Block size (taille d'un bloc, octet)
-        self.bs = int(params[1])
+        self.bs = lst_params_cast[1]
 
         # Degré d'associativité du cache
-        self.assoc = int(params[2])
+        self.assoc = lst_params_cast[2]
 
         # Chemin du fichier de trace mémoire (nom de la trace si même dossier source)
-        self.trace_mem = params[3]
+        self.trace_mem = lst_params_cast[3]
 
         # Nombre d'ensembles
         self.nbe = int(self.cs / (self.bs * self.assoc))
@@ -137,10 +137,11 @@ class Memoire:
 
 
 # Vérification de la récupération des paramètres (& affectation)
-def verif_parametrage():
+def verif_parametrage(arguments):
     # Récupération des arguments passés au script
     print("\nLecture des paramètres...")
-    arguments = sys.argv[1:]
+    if not arguments:
+        arguments = sys.argv[1:]
     param_ok = True
 
     # On vérifie si on récupère bien 4 arguments
@@ -190,13 +191,8 @@ print("| SIMULATION MEMOIRE CACHE |")
 print(" -------------------------- ")
 
 # On crée notre instance de mémoire cache
-params = [1024, 32, 4, "multTrace.txt"]
-MemCache = Memoire(params)
-
-# test d'initialisation de la variable
-print(MemCache.nbe)
-print(MemCache.cs)
-MemCache = Memoire(verif_parametrage())
+params = ["1024", "32", "4", "multTrace.txt"]
+MemCache = Memoire(verif_parametrage(params))
 MemCache.affiche_params()
 
 # Recherche du type de mémoire cache
