@@ -23,10 +23,10 @@ code_ecrit = 0
 # Code de remplacement
 code_rempl = 0
 
-# Nb tot de lectures
-tot_lec = 0
-# Nb tot d'écritures
-tot_ecr = 0
+# Nb succès en lecture
+suc_lec = 0
+# Nb succès en écriture
+suc_ecr = 0
 # Nb défauts en lecture
 def_lec = 0
 # Nb défauts en écriture
@@ -85,8 +85,8 @@ class Memoire:
             # Pour chaque ligne, on initialise "assoc" "Bloc" et on les lie à la cache
             self.cache[index].extend(Bloc() for _ in range(self.assoc))
 
-        # Initialisation de la file (historique) FIFO
-        self.file_fifo = [list(range(self.assoc)) for _ in range(self.nbe)]
+        # Initialisation de la file (historique) FIFO & LRU
+        self.file_fifo_lru = [list(range(self.assoc)) for _ in range(self.nbe)]
 
     # Affichage des paramètres récupérés
     def affiche_params(self):
@@ -112,8 +112,8 @@ class Memoire:
         with open(self.trace_mem, "r") as trace:
             print("Récupération du contenu de la trace mémoire..")
             for inst in trace.readlines():
-                global tot_lec
-                global tot_ecr
+                global suc_lec
+                global suc_ecr
                 global def_lec
                 global def_ecr
                 global code_rempl
@@ -136,12 +136,16 @@ class Memoire:
                     else:
                         # Etiquette trouvée dans un bloc de la cache -> Hit
                         if type_inst == 'R':
-                            tot_lec += 1
+                            suc_lec += 1
                         elif type_inst == 'W':
-                            tot_ecr += 1
+                            suc_ecr += 1
+
+                        if code_rempl == 1:
+                            self.file_fifo_lru[index].pop(self.file_fifo_lru[index].index(assoc))
+                            self.file_fifo_lru[index].append(assoc)
+
                         break
                 else:
-                    # print("Type d'instruction: " + type_inst + " | Instruction: " + str(int(inst[1:9], 16)) + " | Numéro de bloc: " + str(numbloc) + " | Index: " + str(index) + " | Etiquette: " + str(tag))
                     # Etiquette introuvable dans les blocs de la cache -> Miss
                     if type_inst == 'R':
                         def_lec += 1
@@ -149,27 +153,21 @@ class Memoire:
                         def_ecr += 1
 
                     # On écrit alors l'étiquette dans la cache selon le code de remplacement
-                    if code_rempl == 0:
-                        self.fifo(index, tag)
-                    elif code_rempl == 1:
-                        self.lru(index, tag)
+                    if code_rempl == 0 or code_rempl == 1:
+                        self.fifo_lru(index, tag)
                     elif code_rempl == 2:
                         self.nru(index, tag)
                     elif code_rempl == 3:
                         self.rand(index, tag)
         print("La trace mémoire a bien été lue")
 
-    # TO-DO: First in, First out (FiFo)
-    def fifo(self, index, tag):
-        assoc = self.file_fifo[index][0]
+    # First in, First out (FiFo) & Least Recently Used (LRU)
+    def fifo_lru(self, index, tag):
+        assoc = self.file_fifo_lru[index][0]
         self.cache[index][assoc].valide = True
         self.cache[index][assoc].tag = tag
-        self.file_fifo[index].pop(0)
-        self.file_fifo[index].append(assoc)
-
-    # TO-DO: Least Recently Used (LRU)
-    def lru(self, index, tag):
-        pass
+        self.file_fifo_lru[index].pop(0)
+        self.file_fifo_lru[index].append(assoc)
 
     # TO-DO: Not Recently Used
     def nru(self, index, tag):
@@ -261,12 +259,12 @@ def verif_parametrage(arguments):
 # Procédure d'affichage des indicateurs
 def affiche_indics():
     print("\nRécupération des indicateurs...")
-    print("Nombre total de lectures.. " + str(tot_lec) + " (" + str(round((tot_lec / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
-    print("Nombre total d'écritures.. " + str(tot_ecr) + " (" + str(round((tot_ecr / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
-    print("Nombre total de Cache Hit.. " + str(tot_lec + tot_ecr) + " (" + str(round(((tot_lec + tot_ecr) / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
-    print("...\nNombre total de défauts en lecture.. " + str(def_lec) + " (" + str(round((def_lec / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
-    print("Nombre total de défauts en écriture.. " + str(def_ecr) + " (" + str(round((def_ecr / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
-    print("Nombre total de Cache Miss.. " + str(def_lec + def_ecr) + " (" + str(round(((def_lec + def_ecr) / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de succès en lecture.. " + str(suc_lec) + " (" + str(round((suc_lec / (suc_lec + suc_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de succès en écriture.. " + str(suc_ecr) + " (" + str(round((suc_ecr / (suc_lec + suc_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de succès de cache.. " + str(suc_lec + suc_ecr) + " (" + str(round(((suc_lec + suc_ecr) / (suc_lec + suc_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("...\nNombre total de défauts en lecture.. " + str(def_lec) + " (" + str(round((def_lec / (suc_lec + suc_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de défauts en écriture.. " + str(def_ecr) + " (" + str(round((def_ecr / (suc_lec + suc_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de défauts de cache.. " + str(def_lec + def_ecr) + " (" + str(round(((def_lec + def_ecr) / (suc_lec + suc_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
 
 
 # ----------------------------------------------------------------------
