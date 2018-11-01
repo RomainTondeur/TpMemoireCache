@@ -22,6 +22,7 @@ import random
 code_ecrit = 0
 # Code de remplacement
 code_rempl = 0
+
 # Nb tot de lectures
 tot_lec = 0
 # Nb tot d'écritures
@@ -84,6 +85,9 @@ class Memoire:
             # Pour chaque ligne, on initialise "assoc" "Bloc" et on les lie à la cache
             self.cache[index].extend(Bloc() for _ in range(self.assoc))
 
+        # Initialisation de la file (historique) FIFO
+        self.file_fifo = [list(range(self.assoc)) for _ in range(self.nbe)]
+
     # Affichage des paramètres récupérés
     def affiche_params(self):
         print("Taille de la cache.. " + str(self.cs) + " octets")
@@ -98,14 +102,12 @@ class Memoire:
         if self.assoc == 1:
             print("Cache à accès direct (DMC)")
         elif self.assoc == (self.cs % self.bs):
-            print("Cache 100% associatif")
+            print("Cache totalement associatif")
         else:
-            print("Cache de type inconnu ou erreur de paramétrage")
+            print("Cache associatif à " + str(self.assoc) + " ensembles")
 
     # Lecture de la trace (EN CONSTRUCTION)
     def lecture_trace(self):
-        global code_rempl
-
         print("\nOuverture de la trace mémoire...")
         with open(self.trace_mem, "r") as trace:
             print("Récupération du contenu de la trace mémoire..")
@@ -114,15 +116,16 @@ class Memoire:
                 global tot_ecr
                 global def_lec
                 global def_ecr
+                global code_rempl
 
                 # Type d'instruction
                 type_inst = inst[0]
 
                 # Numéro de bloc
-                numbloc = int(int(inst[1:], 16) / self.bs)
+                numbloc = int(inst[1:], 16) / self.bs
 
                 # Index
-                index = numbloc % self.nbe
+                index = int(numbloc) % self.nbe
 
                 # Etiquette
                 tag = int(numbloc / self.nbe)
@@ -138,6 +141,7 @@ class Memoire:
                             tot_ecr += 1
                         break
                 else:
+                    # print("Type d'instruction: " + type_inst + " | Instruction: " + str(int(inst[1:9], 16)) + " | Numéro de bloc: " + str(numbloc) + " | Index: " + str(index) + " | Etiquette: " + str(tag))
                     # Etiquette introuvable dans les blocs de la cache -> Miss
                     if type_inst == 'R':
                         def_lec += 1
@@ -146,29 +150,33 @@ class Memoire:
 
                     # On écrit alors l'étiquette dans la cache selon le code de remplacement
                     if code_rempl == 0:
-                        self.fifo(tag)
+                        self.fifo(index, tag)
                     elif code_rempl == 1:
-                        self.lru(tag)
+                        self.lru(index, tag)
                     elif code_rempl == 2:
-                        self.nru(tag)
+                        self.nru(index, tag)
                     elif code_rempl == 3:
-                        self.rand(tag)
+                        self.rand(index, tag)
         print("La trace mémoire a bien été lue")
 
     # TO-DO: First in, First out (FiFo)
-    def fifo(self, tag):
-        pass
+    def fifo(self, index, tag):
+        assoc = self.file_fifo[index][0]
+        self.cache[index][assoc].valide = True
+        self.cache[index][assoc].tag = tag
+        self.file_fifo[index].pop(0)
+        self.file_fifo[index].append(assoc)
 
     # TO-DO: Least Recently Used (LRU)
-    def lru(self, tag):
+    def lru(self, index, tag):
         pass
 
     # TO-DO: Not Recently Used
-    def nru(self, tag):
+    def nru(self, index, tag):
         pass
 
     # TO-DO: Random
-    def rand(self, tag):
+    def rand(self, index, tag):
         # Génération d'un nombre entier aléatoire entre 1 et cs
         i = int(random.randint(2, self.cs+1)) - 1
         pass
@@ -253,10 +261,12 @@ def verif_parametrage(arguments):
 # Procédure d'affichage des indicateurs
 def affiche_indics():
     print("\nRécupération des indicateurs...")
-    print("Nombre total de lectures.. " + str(tot_lec))
-    print("Nombre total d'écritures.. " + str(tot_ecr))
-    print("Nombre total de défauts en lecture.. " + str(def_lec))
-    print("Nombre total de défauts en écriture.. " + str(def_ecr))
+    print("Nombre total de lectures.. " + str(tot_lec) + " (" + str(round((tot_lec / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total d'écritures.. " + str(tot_ecr) + " (" + str(round((tot_ecr / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de Cache Hit.. " + str(tot_lec + tot_ecr) + " (" + str(round(((tot_lec + tot_ecr) / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("...\nNombre total de défauts en lecture.. " + str(def_lec) + " (" + str(round((def_lec / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de défauts en écriture.. " + str(def_ecr) + " (" + str(round((def_ecr / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
+    print("Nombre total de Cache Miss.. " + str(def_lec + def_ecr) + " (" + str(round(((def_lec + def_ecr) / (tot_lec + tot_ecr + def_lec + def_ecr)) * 100, 2)) + "% du total)")
 
 
 # ----------------------------------------------------------------------
@@ -271,7 +281,7 @@ print("| SIMULATION MEMOIRE CACHE |")
 print(" -------------------------- ")
 
 # On crée notre instance de mémoire cache
-params = ["1024", "32", "4", "multTrace.txt"]
+params = ["4096", "64", "4", "mergesort2000Trace.txt"]
 MemCache = Memoire(verif_parametrage(params))
 MemCache.affiche_params()
 
