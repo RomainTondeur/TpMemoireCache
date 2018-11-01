@@ -18,6 +18,10 @@ import random
 # ----------------------- VARIABLES INDICATEURS ------------------------
 # ----------------------------------------------------------------------
 
+# Code d'écriture
+code_ecrit = 0
+# Code de remplacement
+code_rempl = 0
 # Nb tot de lectures
 tot_lec = 0
 # Nb tot d'écritures
@@ -36,8 +40,11 @@ def_ecr = 0
 class Bloc(object):
     # Procédure d'initialisation
     def __init__(self):
-        #
+        # Bit de validation
         self.valide = False
+
+        # Bit de modification
+        self.modifie = False
 
         # Etiquette
         self.tag = int(0)
@@ -97,10 +104,19 @@ class Memoire:
 
     # Lecture de la trace (EN CONSTRUCTION)
     def lecture_trace(self):
+        global code_rempl
+
         print("\nOuverture de la trace mémoire...")
         with open(self.trace_mem, "r") as trace:
             print("Récupération du contenu de la trace mémoire..")
             for inst in trace.readlines():
+                global tot_lec
+                global tot_ecr
+                global def_lec
+                global def_ecr
+
+                # Type d'instruction
+                type_inst = inst[0]
 
                 # Numéro de bloc
                 numbloc = int(int(inst[1:], 16) / self.bs)
@@ -111,29 +127,81 @@ class Memoire:
                 # Etiquette
                 tag = int(numbloc / self.nbe)
 
-                assoc = 0
-                trouve = False
-                while assoc < self.assoc and not trouve:
+                for assoc in range(self.assoc):
                     if not self.cache[index][assoc].valide or self.cache[index][assoc].tag != tag:
-                        assoc += 1
+                        pass
+                    else:
+                        # Etiquette trouvée dans un bloc de la cache -> Hit
+                        if type_inst == 'R':
+                            tot_lec += 1
+                        elif type_inst == 'W':
+                            tot_ecr += 1
+                        break
+                else:
+                    # Etiquette introuvable dans les blocs de la cache -> Miss
+                    if type_inst == 'R':
+                        def_lec += 1
+                    elif type_inst == 'W':
+                        def_ecr += 1
+
+                    # On écrit alors l'étiquette dans la cache selon le code de remplacement
+                    if code_rempl == 0:
+                        self.fifo(tag)
+                    elif code_rempl == 1:
+                        self.lru(tag)
+                    elif code_rempl == 2:
+                        self.nru(tag)
+                    elif code_rempl == 3:
+                        self.rand(tag)
         print("La trace mémoire a bien été lue")
 
-    # TO-DO: Random
-    def rand(self):
-        # Génération d'un nombre entier aléatoire entre 1 et cs
-        i = int(random.randint(2, self.cs+1))
-        i = i-1
-
-        pass
-
     # TO-DO: First in, First out (FiFo)
-    def fifo(self):
-
+    def fifo(self, tag):
         pass
 
     # TO-DO: Least Recently Used (LRU)
-    def lro(self):
+    def lru(self, tag):
         pass
+
+    # TO-DO: Not Recently Used
+    def nru(self, tag):
+        pass
+
+    # TO-DO: Random
+    def rand(self, tag):
+        # Génération d'un nombre entier aléatoire entre 1 et cs
+        i = int(random.randint(2, self.cs+1)) - 1
+        pass
+
+
+# Dictionnaire des types d'écriture
+tp_ecrit = {
+    0: "WT (Write Through)",
+    1: "WB (Write Back)"
+}
+
+# Dictionnaire des types de remplacement
+tp_rempl = {
+    0: "FIFO (First in, First out)",
+    1: "LRU (Least Recently Used)",
+    2: "NRU (Not Recently Used)",
+    3: "Random"
+}
+
+
+# Calcul du CODE pour le choix du type d'écriture et du type de remplacement des blocs
+def calcul_code():
+    global code_ecrit
+    global code_rempl
+
+    print("\nAuteurs: LAMPE Ronan & TONDEUR Romain")
+    code_aut = [ord('L'), ord('T')]
+    code_auts = sum(code_aut)
+    print("Code: \'L\' + \'T\' = " + str(code_aut[0]) + " + " + str(code_aut[1]) + " = " + str(code_auts))
+    code_ecrit = code_auts % 2
+    print("Gestion écriture = " + str(code_auts) + " % 2 = " + str(code_ecrit) + " : " + tp_ecrit[code_ecrit])
+    code_rempl = code_auts % 4
+    print("Remplacement des blocs = " + str(code_auts) + " % 4 = " + str(code_rempl) + " : " + tp_rempl[code_rempl])
 
 
 # Vérification de la récupération des paramètres (& affectation)
@@ -182,11 +250,23 @@ def verif_parametrage(arguments):
         exit(1)
 
 
+# Procédure d'affichage des indicateurs
+def affiche_indics():
+    print("\nRécupération des indicateurs...")
+    print("Nombre total de lectures.. " + str(tot_lec))
+    print("Nombre total d'écritures.. " + str(tot_ecr))
+    print("Nombre total de défauts en lecture.. " + str(def_lec))
+    print("Nombre total de défauts en écriture.. " + str(def_ecr))
+
+
 # ----------------------------------------------------------------------
 # -------------------------- MAIN DU SCRIPT ----------------------------
 # ----------------------------------------------------------------------
 
-print(" -------------------------- ")
+# Calcul du CODE
+calcul_code()
+
+print("\n -------------------------- ")
 print("| SIMULATION MEMOIRE CACHE |")
 print(" -------------------------- ")
 
@@ -199,4 +279,7 @@ MemCache.affiche_params()
 MemCache.type_cache()
 
 # Lecture de la trace mémoire (EN CONSTRUCTION)
-# MemCache.lecture_trace()
+MemCache.lecture_trace()
+
+# Affichage des indicateurs de Hits/Misses
+affiche_indics()
