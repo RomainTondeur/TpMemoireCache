@@ -45,7 +45,7 @@ class Bloc(object):
         self.valide = False
 
         # Bit de modification
-        self.modifie = False
+        self.in_bit = False
 
         # Etiquette
         self.tag = int(0)
@@ -88,6 +88,9 @@ class Memoire:
         # Initialisation de la file (historique) FIFO & LRU
         self.file_fifo_lru = [list(range(self.assoc)) for _ in range(self.nbe)]
 
+        # Initialisation du compteur de références
+        self.cpt_ref = 0
+
     # Affichage des paramètres récupérés
     def affiche_params(self):
         print("Taille de la cache.. " + str(self.cs) + " octets")
@@ -104,7 +107,7 @@ class Memoire:
         elif self.assoc == (self.cs % self.bs):
             print("Cache totalement associatif")
         else:
-            print("Cache associatif à " + str(self.assoc) + " ensembles")
+            print("Cache associatif à " + str(self.assoc) + " voies")
 
     # Lecture de la trace (EN CONSTRUCTION)
     def lecture_trace(self):
@@ -143,7 +146,9 @@ class Memoire:
                         if code_rempl == 1:
                             self.file_fifo_lru[index].pop(self.file_fifo_lru[index].index(assoc))
                             self.file_fifo_lru[index].append(assoc)
-
+                        elif code_rempl == 2:
+                            self.cache[index][assoc].in_bit = True
+                            self.maj_cpt_nru()
                         break
                 else:
                     # Etiquette introuvable dans les blocs de la cache -> Miss
@@ -169,9 +174,26 @@ class Memoire:
         self.file_fifo_lru[index].pop(0)
         self.file_fifo_lru[index].append(assoc)
 
-    # TO-DO: Not Recently Used
+    # Not Recently Used
     def nru(self, index, tag):
-        pass
+        for assoc in range(self.assoc):
+            if not self.cache[index][assoc].in_bit:
+                self.cache[index][assoc].valide = True
+                self.cache[index][assoc].in_bit = True
+                self.cache[index][assoc].tag = tag
+                break
+        else:
+            pass
+        self.maj_cpt_nru()
+
+    # Màj compteur de références NRU
+    def maj_cpt_nru(self):
+        self.cpt_ref += 1
+        if self.cpt_ref == 1000:
+            for ensemble in self.cache:
+                for bloc in ensemble:
+                    bloc.in_bit = False
+            self.cpt_ref = 0
 
     # TO-DO: Random
     def rand(self, index, tag):
@@ -206,7 +228,7 @@ def calcul_code():
     print("Code: \'L\' + \'T\' = " + str(code_aut[0]) + " + " + str(code_aut[1]) + " = " + str(code_auts))
     code_ecrit = code_auts % 2
     print("Gestion écriture = " + str(code_auts) + " % 2 = " + str(code_ecrit) + " : " + tp_ecrit[code_ecrit])
-    code_rempl = code_auts % 4
+    code_rempl = 2  # code_auts % 4
     print("Remplacement des blocs = " + str(code_auts) + " % 4 = " + str(code_rempl) + " : " + tp_rempl[code_rempl])
 
 
@@ -279,7 +301,7 @@ print("| SIMULATION MEMOIRE CACHE |")
 print(" -------------------------- ")
 
 # On crée notre instance de mémoire cache
-params = ["4096", "64", "4", "mergesort2000Trace.txt"]
+params = ["4096", "64", "4", "multTrace.txt"]
 MemCache = Memoire(verif_parametrage(params))
 MemCache.affiche_params()
 
