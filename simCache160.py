@@ -5,7 +5,7 @@
 #   avec cs=cache_size
 #   /    bs=bloc_size
 #   /    assoc=degre_associativite
-#   /    trace_mem=fichier_trace_memoire
+#   /    trace_mem=chemin_fichier_trace_memoire
 
 
 # Importation des modules
@@ -133,8 +133,8 @@ class Memoire:
                 # Etiquette
                 tag = int(numbloc / self.nbe)
 
-                for assoc in range(self.assoc):
-                    if not self.cache[index][assoc].valide or self.cache[index][assoc].tag != tag:
+                for voie in range(self.assoc):
+                    if not self.cache[index][voie].valide or self.cache[index][voie].tag != tag:
                         pass
                     else:
                         # Etiquette trouvée dans un bloc de la cache -> Hit
@@ -143,13 +143,16 @@ class Memoire:
                         elif type_inst == 'W':
                             suc_ecr += 1
 
-                        if code_rempl == 1:
-                            self.file_fifo_lru[index].pop(self.file_fifo_lru[index].index(assoc))
-                            self.file_fifo_lru[index].append(assoc)
-                        elif code_rempl == 2:
-                            self.cache[index][assoc].in_bit = True
-                            self.maj_cpt_nru()
-                        break
+                        if self.assoc == 1:
+                            pass
+                        elif self.assoc > 1:
+                            if code_rempl == 1:
+                                self.file_fifo_lru[index].pop(self.file_fifo_lru[index].index(voie))
+                                self.file_fifo_lru[index].append(voie)
+                            elif code_rempl == 2:
+                                self.cache[index][voie].in_bit = True
+                                self.maj_cpt_nru()
+                            break
                 else:
                     # Etiquette introuvable dans les blocs de la cache -> Miss
                     if type_inst == 'R':
@@ -157,33 +160,37 @@ class Memoire:
                     elif type_inst == 'W':
                         def_ecr += 1
 
-                    # On écrit alors l'étiquette dans la cache selon le code de remplacement
-                    if code_rempl == 0 or code_rempl == 1:
-                        self.fifo_lru(index, tag)
-                    elif code_rempl == 2:
-                        self.nru(index, tag)
-                    elif code_rempl == 3:
-                        self.rand(index, tag)
+                    if self.assoc == 1:  # Direct Mapped Cache
+                        self.cache[index][voie].valide = True
+                        self.cache[index][voie].tag = tag
+                    elif self.assoc > 1:  # Cache Associatif
+                        # On écrit alors l'étiquette dans la cache selon le code de remplacement
+                        if code_rempl == 0 or code_rempl == 1:
+                            self.fifo_lru(index, tag)
+                        elif code_rempl == 2:
+                            self.nru(index, tag)
+                        elif code_rempl == 3:
+                            self.rand(index, tag)
         print("La trace mémoire a été lue avec succès")
 
     # First in, First out (FiFo) & Least Recently Used (LRU)
     def fifo_lru(self, index, tag):
-        assoc = self.file_fifo_lru[index][0]
-        self.cache[index][assoc].valide = True
-        self.cache[index][assoc].tag = tag
+        voie = self.file_fifo_lru[index][0]
+        self.cache[index][voie].valide = True
+        self.cache[index][voie].tag = tag
         self.file_fifo_lru[index].pop(0)
-        self.file_fifo_lru[index].append(assoc)
+        self.file_fifo_lru[index].append(voie)
 
     # Not Recently Used
     def nru(self, index, tag):
-        for assoc in range(self.assoc):
-            if not self.cache[index][assoc].in_bit:
-                self.cache[index][assoc].valide = True
-                self.cache[index][assoc].in_bit = True
-                self.cache[index][assoc].tag = tag
+        for voie in range(self.assoc):
+            if not self.cache[index][voie].in_bit:
+                self.cache[index][voie].valide = True
+                self.cache[index][voie].in_bit = True
+                self.cache[index][voie].tag = tag
                 break
         else:
-            pass
+            self.rand(index, tag)
         self.maj_cpt_nru()
 
     # Màj compteur de références NRU
@@ -229,7 +236,7 @@ def calcul_code():
     print("Code: \'L\' + \'T\' = " + str(code_aut[0]) + " + " + str(code_aut[1]) + " = " + str(code_auts))
     code_ecrit = code_auts % 2
     print("Gestion écriture = " + str(code_auts) + " % 2 = " + str(code_ecrit) + " : " + tp_ecrit[code_ecrit])
-    code_rempl = 3  # code_auts % 4
+    code_rempl = code_auts % 4
     print("Remplacement des blocs = " + str(code_auts) + " % 4 = " + str(code_rempl) + " : " + tp_rempl[code_rempl])
 
 
