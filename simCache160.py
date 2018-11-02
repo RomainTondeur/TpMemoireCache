@@ -164,7 +164,7 @@ class Memoire:
                         self.nru(index, tag)
                     elif code_rempl == 3:
                         self.rand(index, tag)
-        print("La trace mémoire a bien été lue")
+        print("La trace mémoire a été lue avec succès")
 
     # First in, First out (FiFo) & Least Recently Used (LRU)
     def fifo_lru(self, index, tag):
@@ -195,11 +195,12 @@ class Memoire:
                     bloc.in_bit = False
             self.cpt_ref = 0
 
-    # TO-DO: Random
+    # Random
     def rand(self, index, tag):
-        # Génération d'un nombre entier aléatoire entre 1 et cs
-        i = int(random.randint(2, self.cs+1)) - 1
-        pass
+        # Génération d'un nombre entier aléatoire entre le min(assoc) et le max(assoc)
+        voie = random.randint(min(range(self.assoc)), max(range(self.assoc)))
+        self.cache[index][voie].valide = True
+        self.cache[index][voie].tag = tag
 
 
 # Dictionnaire des types d'écriture
@@ -228,7 +229,7 @@ def calcul_code():
     print("Code: \'L\' + \'T\' = " + str(code_aut[0]) + " + " + str(code_aut[1]) + " = " + str(code_auts))
     code_ecrit = code_auts % 2
     print("Gestion écriture = " + str(code_auts) + " % 2 = " + str(code_ecrit) + " : " + tp_ecrit[code_ecrit])
-    code_rempl = 2  # code_auts % 4
+    code_rempl = 3  # code_auts % 4
     print("Remplacement des blocs = " + str(code_auts) + " % 4 = " + str(code_rempl) + " : " + tp_rempl[code_rempl])
 
 
